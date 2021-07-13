@@ -1,3 +1,4 @@
+from __future__ import annotations
 """                                                                                  """
 """                  ██████╗ ██╗████████╗ ██████╗██╗  ██╗                            """
 """                  ██╔══██╗██║╚══██╔══╝██╔════╝██║  ██║                            """
@@ -8,20 +9,21 @@
 """                                                                                  """
 """ Module Name: pitch                                                               """
 """ Author: Luo Zhong-qi("luozhongqi@mail.com")                                      """
-""" Last modified: 2021-06-06                                                        """
+""" Last modified: 2021-07-13                                                        """
 """                                                                                  """
 """ Description: Defined all the attributes and operations of pitches without modes  """
 """              and scales.                                                         """
 """                                                                                  """
 """ Exported classes:                                                                """
-"""     PITCHES(Enum), ACCIDENTALS(Enum), GenericPitch, Pitch                        """
+"""     NATURAL_PITCHES(Enum), ACCIDENTALS(Enum), GenericPitch, Pitch                        """
 
 from enum import Enum
-from typing import Union
+from typing import Union, List
+import utils
 import interval
 
 # Pitch names constant defination
-class PITCHES(Enum):
+class NATURAL_PITCHES(Enum):
     C = 0
     D = 2
     E = 4
@@ -38,6 +40,42 @@ class ACCIDENTALS(Enum):
     n = 0 # Natural
     s = 1 # Sharp
     ds = 2 # Double Sharp
+
+
+# Pitch names constant defination
+PITCHES = {
+    'C': 0,
+    'Bs': 0, # B Sharp, "s" for sharp, the follows are the same
+    'Ddf': 0, # D Double Flat, "ds" for double flat, the follows are the same
+    'Cs': 1,
+    'Df': 1, # D Flat, "f" for flat, the follows are the same
+    'D': 2,
+    'Cds': 2,
+    'Edf': 2,
+    'Ds': 3,
+    'Ef': 3,
+    'E': 4,
+    'Dds': 4,
+    'Ff': 4,
+    'F': 5,
+    'Es': 5,
+    'Gdf': 5,
+    'Fs': 6,
+    'Gf': 6,
+    'G': 7,
+    'Fds': 7,
+    'Adf': 7,
+    'Gs': 8,
+    'Af': 8,
+    'A': 9,
+    'Gds': 9,
+    'Bds': 9,
+    'As': 10,
+    'Bf': 10,
+    'B': 11,
+    'Ads': 11,
+    'Cf': 11
+}
 
 
 class GenericPitch:
@@ -98,7 +136,7 @@ class GenericPitch:
 
         Arguments:
             pitch[int: 0-11]: The pitch number, "0-12" corresponding to pitch name "C-B". Natural and flat pitches are prior.
-            or pitch[str: member of "PITCHES"]: The pitch name, using this kind of argument is recommonded.
+            or pitch[str: member of "NATURAL_PITCHES"]: The pitch name, using this kind of argument is recommonded.
         """
         self.set_pitch(pitch)
 
@@ -120,15 +158,11 @@ class GenericPitch:
 
         # calculate pitch number
         pitchNumber = self.number + direction * interval.size
-        utils.constrain_by_cycle(pitchNumber, 0, 12)
-        '''if(pitchNumber < 0):
-            pitchNumber += 12
-        elif(pitchNumber > 11):
-            pitchNumber -= 12'''
+        pitchNumber = utils.constrain_by_cycle(pitchNumber, 0, 12)
 
         # find possible pitch name
         shiftedPitchName = ord(self.__name) + direction * (int(interval.name[1]) - 1)
-        shiftedPitchName = chr(utils.constrain_by_cycle(shiftedPitchName, 65, 8))
+        shiftedPitchName = chr(utils.constrain_by_cycle(shiftedPitchName, 65, 8)) # ASCII 65-73 = A-G
         '''if(shiftedPitchName < 65): # ASCII 65: A
             shiftedPitchName += 7
         elif(shiftedPitchName > 71):# ASCII 71: G
@@ -145,8 +179,17 @@ class GenericPitch:
 
     @staticmethod
     def res_name(pitname: str) -> tuple:
+        """
+        Resolve the pitch name with accidental to a tuple and check the format.
+
+        Argument:
+            pitname[str]: The pitch name with accidental e. g. "As" "C" "Fds".
+
+        Return:
+            resolvedName[tuple]: Resolved name e. g. ["A", "s"].
+        """
         # check argument
-        if(pitname[0] in PITCHES.__members__):
+        if(pitname[0] in NATURAL_PITCHES.__members__):
             name = pitname[0]
         else:
             raise ValueError('Pitch name must be one of "C", "D", "E", "F", "G", "A", "B".')
@@ -162,29 +205,59 @@ class GenericPitch:
 
     @staticmethod
     def num_by_name(name: str) -> int:
+        """
+        Search pitch number by pitch name.
+
+        Argument:
+            name[str]: The pitch name with accidental e. g. "As" "C" "Fds".
+
+        Return:
+            pitchNum[int]: The pitch number e. g. 10 for As.
+        """
         name = GenericPitch.res_name(name)
-        return (PITCHES[name[0]].value + ACCIDENTALS[name[1:]].value) % 12
+        return (NATURAL_PITCHES[name[0]].value + ACCIDENTALS[name[1:]].value) % 12
 
     @staticmethod
     def names_by_num(num: int) -> List:
+        """
+        Search pitch names by pitch number.
+
+        Argument:
+            num[int: 0-11]: The pitch number, from 0 to 11.
+
+        Return:
+            names[List:[int]]: The pitch names e. g. "As", "Bf" for 10.
+        """
         # check argument
         if(not(0 <= num < 12)):
             raise ValueError('Pitch number must be an integer between 0 and 11.')
 
         names = []
         try:
-            names.apppend(PITCHES(num).name, ACCIDENTALS.n.name)
-        pass #TODO(Luo Zhong-qi): Waiting for realize...
+            names.apppend(NATURAL_PITCHES(num).name, ACCIDENTALS.n.name)
+        except:
+            names = utils.search_dict_by_value(PITCHES, num)
+
+        return names
 
     @staticmethod
     def name_by_num(num: int) -> str:
+        """
+        Search pitch name by pitch number, natural and flat are prior.
+
+        Argument:
+            num[int: 0-11]: The pitch number, from 0 to 11.
+
+        Return:
+            name[int]: The pitch names e. g. "Bf" for 10.
+        """
         if(not(0 <= num < 12)):
             raise ValueError('Pitch number must be an integer between 0 and 11.')
 
         try:
-            return (PITCHES(num).name, ACCIDENTALS.n.name)
+            return (NATURAL_PITCHES(num).name, ACCIDENTALS.n.name)
         except:
-            return (PITCHES(num + 1).name, ACCIDENTALS.df.name)
+            return (NATURAL_PITCHES(num + 1).name, ACCIDENTALS.df.name)
 
 
     #def __add__(self, interval: AbstractInterval) -> GenericPitch: # ERROR
@@ -226,7 +299,7 @@ class GenericPitch:
     
     @property
     def number(self):
-        return (PITCHES[self.__name].value + ACCIDENTALS[self.__accidental].value) % 12
+        return (NATURAL_PITCHES[self.__name].value + ACCIDENTALS[self.__accidental].value) % 12
     
 
 class Pitch(GenericPitch):

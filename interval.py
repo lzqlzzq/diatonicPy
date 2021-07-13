@@ -9,7 +9,7 @@ from __future__ import annotations
 """                                                                                  """
 """ Module Name: pitch                                                               """
 """ Author: Luo Zhong-qi("luozhongqi@mail.com")                                      """
-""" Last modified: 2021-06-06                                                        """
+""" Last modified: 2021-06-08                                                        """
 """                                                                                  """
 """ Description: Defined all the attributes and operations of intervals without      """
 """              modes and scales.                                                   """
