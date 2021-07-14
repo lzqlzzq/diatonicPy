@@ -15,7 +15,10 @@ from __future__ import annotations
 """              and scales.                                                         """
 """                                                                                  """
 """ Exported classes:                                                                """
-"""     NATURAL_PITCHES(Enum), ACCIDENTALS(Enum), GenericPitch, Pitch                        """
+"""     NATURAL_PITCHES(Enum), ACCIDENTALS(Enum), GenericPitch, Pitch                """
+"""                                                                                  """
+""" Exported Constants:                                                              """
+"""     PITCHES(dict)                                                                """
 
 from enum import Enum
 from typing import Union, List
@@ -303,4 +306,72 @@ class GenericPitch:
     
 
 class Pitch(GenericPitch):
-    pass
+    """
+    Describes pitches with octave.
+
+    Properties:
+        name: The name of the pitch without accidental. Using "str(Pitch)" to include accidental.
+        accidental: The accidental of the pitch, defined by Enum "ACCIDENTALS".
+        number: The generic number of the pitch.
+        octave: The octave number of the pitch in Science Pitch Notation.
+        MIDInumber: The MIDI number of the pitch.
+
+    Methods:
+        __init__(self, pitch): Constructor of the class.
+        __repr__(self): Representer of the class.
+        set_pitch(self, pitch): Set pitch of this instance with pitch name or pitch number.
+        set(self, pitch): Set pitch of this instance with pitch name or pitch number.
+        shift(self, interval, direction): Shift this pitch with "GenericPitch" instance and interval, and direction.
+
+    Oprations:
+        add[GenericPitch + AbstractInterval]: Raise the pitch with an interval.
+            e. g. "C + M3 = E" //Pseudo code, not Python
+        sub[GenericPitch - AbstractInterval]: Lower the pitch with an interval.
+            e. g. "C - M3 = Ab"
+    """
+
+    __octave = 4
+
+    def __init__(self, pitch: Union[int, str]) -> None:
+       # 
+
+    def set_octave(self, oct: int) -> None:
+        if(oct < 0 or oct > 8):
+            raise ValueError("Octave number out of range, should between 0 and 8.")
+        elif(oct == 8 and this.number > 0):
+            raise ValueError("The pitch is out of range, should between A0 and C8")
+        else:
+            self.__octave = oct
+
+    @staticmethod
+    def res_name(pitname: str) -> tuple:
+        """
+        Resolve the pitch name with accidental to a tuple and check the format.
+
+        Argument:
+            pitname[str]: The pitch name with accidental e. g. "As4" "C5" "Fds2".
+
+        Return:
+            resolvedName[tuple]: Resolved name e. g. ["A", "s", 4].
+        """
+        if(pitname[0] in NATURAL_PITCHES.__members__):
+        name = pitname[0]
+        else:
+            raise ValueError('Pitch name must be one of "C", "D", "E", "F", "G", "A", "B".')
+
+        if(len(pitname) == 1):
+            accidental = ACCIDENTALS.n.name
+        elif(pitname[1:-1] in ACCIDENTALS.__members__):
+            accidental = pitname[1:]
+        else:
+            raise ValueError('The accidental of pitch name must be one of "s", "f", "ds", "df", or "n".')
+
+        return (name, accidental)
+        # TODO
+
+
+
+    @property
+    def octave(self):
+        return self.__octave
+    
