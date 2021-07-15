@@ -125,13 +125,13 @@ class GenericPitch:
             or pitch[str: pitch name, e. g. "C, Cs, Cf"]: The pitch name, using this kind of argument is recommonded.
         """
         if(isinstance(pitch, str)):
-            pitchname = GenericPitch.res_name(pitch)
-            self.__name = pitchname[0]
-            self.__accidental = pitchname[1]
+            pitchName = GenericPitch.res_name(pitch)
+            self.__name = pitchName[0]
+            self.__accidental = pitchName[1]
         elif(isinstance(pitch, int)):
-            pitchname = GenericPitch.name_by_num(pitch)
-            self.__name = pitchname[0]
-            self.__accidental = pitchname[1]
+            pitchName = GenericPitch.res_name(GenericPitch.name_by_num(pitch))
+            self.__name = pitchName[0]
+            self.__accidental = pitchName[1:]
 
     def set(self, pitch: Union[int, str]) -> None:
         """
@@ -143,7 +143,7 @@ class GenericPitch:
         """
         self.set_pitch(pitch)
 
-    def shift(self, interval: interval.AbstractInterval, direction):
+    def shift(self, interval: interval.AbstractInterval, direction: int) -> GenericPitch:
         """
         Shift this pitch with interval and direction.
 
@@ -166,11 +166,6 @@ class GenericPitch:
         # find possible pitch name
         shiftedPitchName = ord(self.__name) + direction * (int(interval.name[1]) - 1)
         shiftedPitchName = chr(utils.constrain_by_cycle(shiftedPitchName, 65, 8)) # ASCII 65-73 = A-G
-        '''if(shiftedPitchName < 65): # ASCII 65: A
-            shiftedPitchName += 7
-        elif(shiftedPitchName > 71):# ASCII 71: G
-            shiftedPitchName -= 7
-        shiftedPitchName = chr(shiftedPitchName)'''
 
         pitchNames = GenericPitch.names_by_num(pitchNumber)
         for pitchName in pitchNames:
@@ -181,26 +176,26 @@ class GenericPitch:
         return GenericPitch(pitchNames[int(1 - direction / 2)])
 
     @staticmethod
-    def res_name(pitname: str) -> tuple:
+    def res_name(pitchName: str) -> tuple:
         """
         Resolve the pitch name with accidental to a tuple and check the format.
 
         Argument:
-            pitname[str]: The pitch name with accidental e. g. "As" "C" "Fds".
+            pitchName[str]: The pitch name with accidental e. g. "As" "C" "Fds".
 
         Return:
             resolvedName[tuple]: Resolved name e. g. ["A", "s"].
         """
         # check argument
-        if(pitname[0] in NATURAL_PITCHES.__members__):
-            name = pitname[0]
+        if(pitchName[0] in NATURAL_PITCHES.__members__):
+            name = pitchName[0]
         else:
             raise ValueError('Pitch name must be one of "C", "D", "E", "F", "G", "A", "B".')
 
-        if(len(pitname) == 1):
+        if(len(pitchName) == 1):
             accidental = ACCIDENTALS.n.name
-        elif(pitname[1:] in ACCIDENTALS.__members__):
-            accidental = pitname[1:]
+        elif(pitchName[1:] in ACCIDENTALS.__members__):
+            accidental = pitchName[1:]
         else:
             raise ValueError('The accidental of pitch name must be one of "s", "f", "ds", "df", or "n".')
 
@@ -218,7 +213,7 @@ class GenericPitch:
             pitchNum[int]: The pitch number e. g. 10 for As.
         """
         name = GenericPitch.res_name(name)
-        return (NATURAL_PITCHES[name[0]].value + ACCIDENTALS[name[1:]].value) % 12
+        return (NATURAL_PITCHES[name[0]].value + ACCIDENTALS[name[1:]].value) % 12 # ERROR
 
     @staticmethod
     def names_by_num(num: int) -> List:
@@ -258,9 +253,9 @@ class GenericPitch:
             raise ValueError('Pitch number must be an integer between 0 and 11.')
 
         try:
-            return (NATURAL_PITCHES(num).name, ACCIDENTALS.n.name)
+            return "{}".format(NATURAL_PITCHES(num).name)
         except:
-            return (NATURAL_PITCHES(num + 1).name, ACCIDENTALS.df.name)
+            return "{}f".format(NATURAL_PITCHES(num + 1).name)
 
 
     #def __add__(self, interval: AbstractInterval) -> GenericPitch: # ERROR
@@ -333,45 +328,77 @@ class Pitch(GenericPitch):
     __octave = 4
 
     def __init__(self, pitch: Union[int, str]) -> None:
-       # 
+        self.set(pitch)
 
-    def set_octave(self, oct: int) -> None:
-        if(oct < 0 or oct > 8):
+    def __str__(self):
+        return '{}{}{}'.format(self.__name, '' if self.__accidental == ACCIDENTALS.n.name else self.__accidental,
+                                self.__octave)
+
+    def __repr__(self):
+        return "Pitch:\n    name: {},\n    number: {},\n    octave: {}".format(str(self), self.number, self.octave)
+
+    def set(self, pitch: Union[int, str]) -> None:
+        pass # TODO
+
+    def set_pitch(self, pitch: Union[int, str]) -> None:
+        if(self.__octave == 8):
+            if(GenericPitch.num_by_name(pitch) > 0):
+                raise ValueError("The pitch is out of range, should between A0 and C8")
+
+        super(Pitch, self).set_pitch(pitch)
+
+    def set_octave(self, octave: int) -> None:
+        if(octave < 0 or octave > 8):
             raise ValueError("Octave number out of range, should between 0 and 8.")
-        elif(oct == 8 and this.number > 0):
+        elif(octave == 8 and self.number > 0):
             raise ValueError("The pitch is out of range, should between A0 and C8")
         else:
-            self.__octave = oct
+            self.__octave = octave
+
+    def shift(self, interval: interval.GenericInterval, direction: int) -> Pitch:
+        pass # TODO
 
     @staticmethod
-    def res_name(pitname: str) -> tuple:
+    def res_name(pitchName: str) -> tuple:
         """
         Resolve the pitch name with accidental to a tuple and check the format.
 
         Argument:
-            pitname[str]: The pitch name with accidental e. g. "As4" "C5" "Fds2".
+            pitchName[str]: The pitch name with accidental e. g. "As4" "C5" "Fds2".
 
         Return:
             resolvedName[tuple]: Resolved name e. g. ["A", "s", 4].
         """
-        if(pitname[0] in NATURAL_PITCHES.__members__):
-        name = pitname[0]
+        octave = int(pitchName[-1])
+        genericPitch = GenericPitch.res_name(pitchName[:-1])
+
+        if(octave < 0 or octave > 8):
+            raise ValueError("Octave number out of range, should between 0 and 8.")
+        elif(octave == 8 and GenericPitch.num_by_name(pitchName[:-1]) > 0):
+            raise ValueError("The pitch is out of range, should between A0 and C8")
         else:
-            raise ValueError('Pitch name must be one of "C", "D", "E", "F", "G", "A", "B".')
+            return (genericPitch[0], genericPitch[1], octave)
 
-        if(len(pitname) == 1):
-            accidental = ACCIDENTALS.n.name
-        elif(pitname[1:-1] in ACCIDENTALS.__members__):
-            accidental = pitname[1:]
-        else:
-            raise ValueError('The accidental of pitch name must be one of "s", "f", "ds", "df", or "n".')
+    @staticmethod
+    def name_by_MIDI_num(MIDINum: int) -> str:
+        pitchName = GenericPitch.name_by_num(MIDINum % 12)
+        octave = MIDINum // 12 - 1
+        return "{}{}".format(pitchName, octave)
 
-        return (name, accidental)
-        # TODO
+    @staticmethod
+    def names_by_MIDI_num(MIDINum: int) -> str:
+        pass #TODO
 
-
+    @staticmethod
+    def MIDI_num_by_name(pitchName: str) -> int:
+        pitch = Pitch.res_name(pitchName)
+        return GenericPitch.num_by_name("{}{}".format(pitch[0], pitch[1])) + 12 * (pitch[2] + 1)
 
     @property
     def octave(self):
         return self.__octave
+    
+    @property
+    def MIDInumber(self):
+        return Pitch.name_by_MIDI_num(str(self))
     
