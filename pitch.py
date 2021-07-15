@@ -213,7 +213,8 @@ class GenericPitch:
             pitchNum[int]: The pitch number e. g. 10 for As.
         """
         name = GenericPitch.res_name(name)
-        return (NATURAL_PITCHES[name[0]].value + ACCIDENTALS[name[1:]].value) % 12 # ERROR
+        print(name)
+        return (NATURAL_PITCHES[name[0]].value + ACCIDENTALS[name[1]].value) % 12
 
     @staticmethod
     def names_by_num(num: int) -> List:
