@@ -98,10 +98,20 @@ class GenericPitch:
         shift(self, interval, direction): Shift this pitch with "GenericPitch" instance and interval, and direction.
 
     Oprations:
-        add[GenericPitch + AbstractInterval]: Raise the pitch with an interval.
+        add(GenericPitch + AbstractInterval): Raise the pitch with an interval.
             e. g. "C + M3 = E" //Pseudo code, not Python
-        sub[GenericPitch - AbstractInterval]: Lower the pitch with an interval.
+        sub(GenericPitch - AbstractInterval): Lower the pitch with an interval.
             e. g. "C - M3 = Ab"
+
+    Static Methods:
+        res_name(pitchName): Resolve the pitch name with accidental to a tuple and check the format.
+            e. g. ["A", "s"] for "As".
+        num_by_name(pitchName): Search pitch number by pitch name.
+            e. g. 10 for As.
+        names_by_num(num): Search pitch names by pitch number.
+            e. g. "As", "Bf" for 10.
+        name_by_num(num): Search pitch name by pitch number, natural and flat are prior.
+            e. g. "Bf" for 10.
     """
 
     __name = 'C'
@@ -131,7 +141,7 @@ class GenericPitch:
         elif(isinstance(pitch, int)):
             pitchName = GenericPitch.res_name(GenericPitch.name_by_num(pitch))
             self.__name = pitchName[0]
-            self.__accidental = pitchName[1:]
+            self.__accidental = pitchName[1]
 
     def set(self, pitch: Union[int, str]) -> None:
         """
@@ -202,7 +212,7 @@ class GenericPitch:
         return (name, accidental)
 
     @staticmethod
-    def num_by_name(name: str) -> int:
+    def num_by_name(pitchName: str) -> int:
         """
         Search pitch number by pitch name.
 
@@ -212,9 +222,8 @@ class GenericPitch:
         Return:
             pitchNum[int]: The pitch number e. g. 10 for As.
         """
-        name = GenericPitch.res_name(name)
-        print(name)
-        return (NATURAL_PITCHES[name[0]].value + ACCIDENTALS[name[1]].value) % 12
+        pitchName = GenericPitch.res_name(pitchName)
+        return (NATURAL_PITCHES[pitchName[0]].value + ACCIDENTALS[pitchName[1]].value) % 12
 
     @staticmethod
     def names_by_num(num: int) -> List:
@@ -259,8 +268,7 @@ class GenericPitch:
             return "{}f".format(NATURAL_PITCHES(num + 1).name)
 
 
-    #def __add__(self, interval: AbstractInterval) -> GenericPitch: # ERROR
-    def __add__(self, interval):
+    def __add__(self, interval: AbstractInterval) -> GenericPitch:
         """
         Raise this pitch with interval.
 
@@ -275,8 +283,7 @@ class GenericPitch:
         """
         return self.shift(interval, 1)
 
-    #def __sub__(self, interval: AbstractInterval) -> GenericPitch: # ERROR
-    def __sub__(self, interval):
+    def __sub__(self, interval: AbstractInterval) -> GenericPitch:
         """
         Lower this pitch with interval.
 
@@ -321,9 +328,19 @@ class Pitch(GenericPitch):
 
     Oprations:
         add[GenericPitch + AbstractInterval]: Raise the pitch with an interval.
-            e. g. "C + M3 = E" //Pseudo code, not Python
+            e. g. "C4 + M3 = E4" //Pseudo code, not Python
         sub[GenericPitch - AbstractInterval]: Lower the pitch with an interval.
-            e. g. "C - M3 = Ab"
+            e. g. "C4 - M3 = Ab3"
+
+    Static Methods:
+        res_name(pitchName): Resolve the pitch name with accidental to a tuple and check the format.
+            e. g. ["A", "s", 4] for "As4".
+        MIDI_num_by_name(pitchName): Search pitch number by pitch name.
+            e. g. 60 for C4.
+        names_by_MIDI_num(num): Search pitch names by pitch number.
+            e. g. "Bs3", "C4" for 60.
+        name_by_MIDI_num(num): Search pitch name by pitch number, natural and flat are prior.
+            e. g. "C4" for 60.
     """
 
     __octave = 4
@@ -339,7 +356,16 @@ class Pitch(GenericPitch):
         return "Pitch:\n    name: {},\n    number: {},\n    octave: {}".format(str(self), self.number, self.octave)
 
     def set(self, pitch: Union[int, str]) -> None:
-        pass # TODO
+        if(isinstance(pitch, str)):
+            pitchName = Pitch.res_name(pitch)
+            self.__name = pitchName[0]
+            self.__accidental = pitchName[1]
+            self.__octave = pitchName[2]
+        elif(isinstance(pitch, int)):
+            pitchName = Pitch.res_name(Pitch.name_by_MIDI_num(pitch))
+            self.__name = pitchName[0]
+            self.__accidental = pitchName[1]
+            self.__octave = pitchName[2]
 
     def set_pitch(self, pitch: Union[int, str]) -> None:
         if(self.__octave == 8):
