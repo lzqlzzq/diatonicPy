@@ -1,4 +1,4 @@
 
 
 from pitch import GenericPitch, Pitch
-from interval import AbstractInterval, GenericInterval, Interval
+from interval import AbstractInterval, Interval

@@ -170,11 +170,11 @@ class GenericPitch:
         assert (direction == -1 or direction ==1), 'Direction must be -1 or 1.'
 
         # calculate pitch number
-        pitchNumber = self.number + direction * interval.size
+        pitchNumber = self.number + direction * interval.singleSize
         pitchNumber = utils.constrain_by_cycle(pitchNumber, 0, 12)
 
         # find possible pitch name
-        shiftedPitchName = ord(self.__name) + direction * (int(interval.name[1]) - 1)
+        shiftedPitchName = ord(self.__name) + direction * (int(interval.singleName[1]) - 1)
         shiftedPitchName = chr(utils.constrain_by_cycle(shiftedPitchName, 65, 8)) # ASCII 65-73 = A-G
 
         pitchNames = GenericPitch.names_by_num(pitchNumber)

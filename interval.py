@@ -15,7 +15,7 @@ from __future__ import annotations
 """              modes and scales.                                                   """
 """                                                                                  """
 """ Exported classes:                                                                """
-"""     AbstractInterval, GenericInterval, Interval                                  """
+"""     AbstractInterval, Interval                                                   """
 """                                                                                  """
 """ Exported constants:                                                              """
 """     INTERVALS(dict)                                                              """
@@ -63,7 +63,7 @@ INTERVALS = {
 
 class AbstractInterval:
     """
-    Describes intervals without specific pitchs.
+    Describes intervals without specific pitchs with octaves.
 
     Properties:
         name: Name of the interval.
@@ -87,8 +87,8 @@ class AbstractInterval:
         Constructor of the class.
 
         Arguments:
-            interval[int: 0-12]: The semitone number fo the interval. Natural or diminished intervals are prior if using int as argument.
-            or interval[str: member of "INTERVALS"]: The interval name. Using this as argument is recommend.
+            interval[int: 0-]: The semitone number fo the interval. Natural or diminished intervals are prior if using int as argument.
+            or interval[str: member of "INTERVALS"]: The interval name. Format is as the INTERVALS dict. Using this as argument is recommend.
 
         Return:
             instance[AbstractInterval]: The interval instance according to the arguments.
@@ -106,15 +106,16 @@ class AbstractInterval:
         Set interval of this instance with interval name or interval size.
 
         Arguments:
-            interval[int: 0-12]: The semitone number fo the interval. Natural or diminished intervals are prior if using int as argument.
-            or interval[str: member of "INTERVALS"]: The interval name. Using this as argument is recommend.
+            interval[int: 0-88]: The semitone number fo the interval. Natural or diminished intervals are prior if using int as argument.
+            or interval[str]: The interval name. Format is as the dictionary "INTERVALS". Using this as argument is recommend.
         """
-        if(interval in INTERVALS):
+        if(isinstance(interval, str) and not AbstractInterval.res_name(interval) == None):
             self.__name = interval
-        elif(isinstance(interval, int) and -1 < interval < 13):
-            self.__name = utils.search_dict_by_value(INTERVALS, interval)[0] # Natural intervals are prior
+        elif(isinstance(interval, int) and 0 < interval < 88):
+            singleIntervalName = utils.search_dict_by_value(INTERVALS, interval % 12)[0] # Natural intervals are prior
+            self.__name = "{}{}".format(singleIntervalName[0], int(interval) // 12 * 7 + int(singleIntervalName[1]))
         else:
-            raise TypeError('"interval" must be a integer between 0 and 12 or a member in the dictionary "INTERVALS".')
+            raise TypeError('"interval" must be a integer between 0 and 88 or as format of members in the dictionary "INTERVALS".')
 
     def invert(self):
         """
@@ -125,15 +126,26 @@ class AbstractInterval:
 
         Example:
             i = AbstractInterval("A4")
-            i.invert()
-            print(i) # Prints "d5"
+            print(i.invert()) # Prints "d5"
         """
 
-        return AbstractInterval(INTERVAL_QUALITIES(-INTERVAL_QUALITIES[self.__name[0]].value).name +
-                                str(9 - int(self.__name[1])))
+        return AbstractInterval(INTERVAL_QUALITIES(-INTERVAL_QUALITIES[self.quality].value).name +
+                                str(9 - int(self.singleDegree) + self.octave * 7))
 
     @staticmethod
-    def eval(rootPitch: pitch.GenericPitch, topPitch: pitch.GenericPitch) -> AbstractInterval:
+    def res_name(intervalName: str) -> tuple:
+        if(intervalName[0] in INTERVAL_QUALITIES.__members__):
+            quality = intervalName[0]
+        else:
+            raise ValueError("Interval quality must be M, m, P, A, d(major, minor, perfect, augmented, diminished).")
+        if(0 <= int(intervalName[1:]) <= 52):
+            degree = int(intervalName[1:])
+        else:
+            raise ValueError("Interval degree must between 1 and 52.")
+        return (quality, degree)
+
+    @staticmethod
+    def eval(rootPitch: pitch.Pitch, topPitch: pitch.Pitch) -> AbstractInterval:
         """
         Evaluate interval between root pitch and top pitch.
 
@@ -162,7 +174,7 @@ class AbstractInterval:
                 return AbstractInterval(intervalName)
 
         # Enharmonic if no found
-        return AbstractInterval(intervalNames[0])
+        return AbstractInterval(intervalNames[0]) # TO-FIX
 
     @staticmethod
     def eval_min(pitch1: pitch.GenericPitch, pitch2: pitch.GenericPitch) -> AbstractInterval:
@@ -192,40 +204,40 @@ class AbstractInterval:
         return self.__name
 
     @property
+    def quality(self):
+        return self.__name[0]
+
+    @property
+    def degree(self):
+        return int(self.__name[1:])
+
+    @property
+    def octave(self):
+        return self.degree // 8
+
+    @property
+    def singleName(self):
+        return "{}{}".format(self.quality, self.degree % 7)
+
+    @property
+    def singleSize(self):
+        return INTERVALS[self.singleName]
+
+    @property
+    def singleDegree(self):
+        return self.degree % 7
+
+    @property
     def size(self):
-        return INTERVALS[self.__name]
+        return INTERVALS[self.singleName] + self.degree // 7 * 12
 
 
-class GenericInterval(AbstractInterval):
-    """
-    Describes intervals with octaves but without specific pitchs.
-
-    Inheritance:
-        AbstractInterval
-
-    Properties:
-        name: Name of the interval.
-        size: semitone number of the interval.
-
-    Methods:
-        __init__(self, interval: Constructor of the class.
-        __repr__(self): Representer of the class.
-        set(self, interval): Set interval of this instance with interval name or interval size.
-        invert(self, interval): Evaluate inversion of this interval instance.
-
-    Static Methods:
-        eval(rootPitch, topPitch): Evaluate interval between root pitch and top pitch.
-        eval_min(pitch1, pitch2): Evaluate minimal interval between two pitches. The position of pitches may be shifted.
-    """
-    pass #TODO(Luo Zhong-qi): Waiting for realize...
-
-
-class Interval(GenericInterval):
+class Interval(AbstractInterval):
     """
     Describes intervals with specific pitchs and octaves.
 
     Inheritance:
-        GenericInterval
+        AbstractInterval
 
     Properties:
         name: Name of the interval.
