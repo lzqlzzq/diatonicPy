@@ -9,7 +9,7 @@ from __future__ import annotations
 """                                                                                  """
 """ Module Name: pitch                                                               """
 """ Author: Luo Zhong-qi("luozhongqi@mail.com")                                      """
-""" Last modified: 2021-07-13                                                        """
+""" Last modified: 2021-07-20                                                        """
 """                                                                                  """
 """ Description: Defined all the attributes and operations of pitches without modes  """
 """              and scales.                                                         """
@@ -34,6 +34,17 @@ class NATURAL_PITCHES(Enum):
     G = 7
     A = 9
     B = 11
+
+
+# Natural scale
+class NATURAL_SCALE(Enum):
+    C = 1
+    D = 2
+    E = 3
+    F = 4
+    G = 5
+    A = 6
+    B = 7
 
 
 # Accidental names constant defination
@@ -149,7 +160,7 @@ class GenericPitch:
 
         Arguments:
             pitch[int: 0-11]: The pitch number, "0-12" corresponding to pitch name "C-B". Natural and flat pitches are prior.
-            or pitch[str: member of "NATURAL_PITCHES"]: The pitch name, using this kind of argument is recommonded.
+            or pitch[str: as format of dictionary "PITCHES"]: The pitch name, using this kind of argument is recommonded.
         """
         self.set_pitch(pitch)
 
@@ -306,6 +317,10 @@ class GenericPitch:
     @property
     def number(self):
         return (NATURAL_PITCHES[self.__name].value + ACCIDENTALS[self.__accidental].value) % 12
+
+    @property
+    def scaleDegree(self):
+        return NATURAL_SCALE[self.__name].value
     
 
 class Pitch(GenericPitch):

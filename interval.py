@@ -9,7 +9,7 @@ from __future__ import annotations
 """                                                                                  """
 """ Module Name: pitch                                                               """
 """ Author: Luo Zhong-qi("luozhongqi@mail.com")                                      """
-""" Last modified: 2021-06-08                                                        """
+""" Last modified: 2021-07-20                                                        """
 """                                                                                  """
 """ Description: Defined all the attributes and operations of intervals without      """
 """              modes and scales.                                                   """
@@ -80,7 +80,8 @@ class AbstractInterval:
         eval_min(pitch1, pitch2): Evaluate minimal interval between two pitches. The position of pitches may be inverted.
     """
 
-    __name = 'P1'
+    __quality = "P"
+    __degree = 1
 
     def __init__(self, interval: Union[int, str]) -> None:
         """
@@ -96,24 +97,27 @@ class AbstractInterval:
         self.set(interval)
 
     def __str__(self):
-        return self.__name
+        return "{}{}".format(self.__quality, self.__degree)
 
     def __repr__(self):
-        return "intervalName: {}, intervalSize: {}".format(self.__name, self.size)
+        return "intervalName: {}, intervalSize: {}".format(str(self), self.size)
 
     def set(self, interval: Union[int, str]) -> None:
         """
         Set interval of this instance with interval name or interval size.
 
         Arguments:
-            interval[int: 0-88]: The semitone number fo the interval. Natural or diminished intervals are prior if using int as argument.
+            interval[int: 0-88]: The semitone number of the interval. Natural or diminished intervals are prior if using int as argument.
             or interval[str]: The interval name. Format is as the dictionary "INTERVALS". Using this as argument is recommend.
         """
-        if(isinstance(interval, str) and not AbstractInterval.res_name(interval) == None):
-            self.__name = interval
+        if(isinstance(interval, str)):
+            interval = AbstractInterval.res_name(interval)
+            self.__quality = interval[0]
+            self.__degree = interval[1]
         elif(isinstance(interval, int) and 0 < interval < 88):
             singleIntervalName = utils.search_dict_by_value(INTERVALS, interval % 12)[0] # Natural intervals are prior
-            self.__name = "{}{}".format(singleIntervalName[0], int(interval) // 12 * 7 + int(singleIntervalName[1]))
+            self.__quality = singleIntervalName[0]
+            self.__degree = interval // 12 * 7 + int(singleIntervalName[1])
         else:
             raise TypeError('"interval" must be a integer between 0 and 88 or as format of members in the dictionary "INTERVALS".')
 
@@ -138,23 +142,24 @@ class AbstractInterval:
             quality = intervalName[0]
         else:
             raise ValueError("Interval quality must be M, m, P, A, d(major, minor, perfect, augmented, diminished).")
-        if(0 <= int(intervalName[1:]) <= 52):
+        if(1 <= int(intervalName[1:]) <= 52):
             degree = int(intervalName[1:])
         else:
             raise ValueError("Interval degree must between 1 and 52.")
         return (quality, degree)
 
     @staticmethod
-    def eval(rootPitch: pitch.Pitch, topPitch: pitch.Pitch) -> AbstractInterval:
+    def eval(rootPitch: Union[pitch.GenericPitch, pitch.Pitch], topPitch: Union[pitch.GenericPitch, pitch.Pitch]) -> AbstractInterval:
         """
         Evaluate interval between root pitch and top pitch.
 
         Arguments:
-            rootPitch[Pitch]: The root pitch of the interval.
-            topPitch[Pitch]: The top pitch of the interval.
+            rootPitch[GenericPitch or Pitch]: The root pitch of the interval.
+            topPitch[GenericPitch or Pitch]: The top pitch of the interval.
+            P. S.: The type of two arguments must be identical.
 
         Return:
-            instance[Interval]: The interval constructed by the root pitch and the top pitch.
+            instance[AbstractInterval]: The interval constructed by the root pitch and the top pitch.
 
         Example:
             rp = GenericPitch("F")
@@ -162,19 +167,21 @@ class AbstractInterval:
             i = AbstractInterval.eval(rp, tp) # Prints "M7"
         """
         intervalSize = topPitch.number - rootPitch.number
-        degreeSize = ord(topPitch.name) - ord(rootPitch.name)
+        degreeSize = topPitch.scaleDegree - rootPitch.scaleDegree
 
-        intervalSize = intervalSize if (intervalSize >= 0) else (12 + intervalSize) # Interval size should be a positive value.
-        degreeSize = degreeSize if (degreeSize >= 0) else (degreeSize + 7) # Interval size should also be a positive value.
+        intervalSize = intervalSize if (intervalSize >= 0) else (intervalSize + 12) # Interval size should be a positive value.
+        degreeSize = degreeSize + 1 if (degreeSize >= 0) else (degreeSize + 8)
+        singleDegreeSize = utils.constrain_by_cycle(degreeSize, 1, 7) # Interval size should also be a positive value.
+        singleIntervalSize = intervalSize % 12
 
-        intervalNames = utils.search_dict_by_value(INTERVALS, intervalSize) # Find possible interval names.
+        singleIntervalNames = utils.search_dict_by_value(INTERVALS, singleIntervalSize) # Find possible interval names.
         # Find the unique interval name.
-        for intervalName in intervalNames:
-            if(int(intervalName[-1]) - 1 == degreeSize):
-                return AbstractInterval(intervalName)
+        for singleIntervalName in singleIntervalNames:
+            if(int(singleIntervalName[-1]) == singleDegreeSize):
+                return AbstractInterval("{}{}".format(singleIntervalName[0], degreeSize))
 
         # Enharmonic if no found
-        return AbstractInterval(intervalNames[0]) # TO-FIX
+        return AbstractInterval(singleIntervalNames[0]) # TODO(Luo Zhong-qi): Support Pitch class.
 
     @staticmethod
     def eval_min(pitch1: pitch.GenericPitch, pitch2: pitch.GenericPitch) -> AbstractInterval:
@@ -205,19 +212,19 @@ class AbstractInterval:
 
     @property
     def quality(self):
-        return self.__name[0]
+        return self.__quality
 
     @property
     def degree(self):
-        return int(self.__name[1:])
+        return self.__degree
 
     @property
     def octave(self):
-        return self.degree // 8
+        return (self.degree - 1) // 7
 
     @property
     def singleName(self):
-        return "{}{}".format(self.quality, self.degree % 7)
+        return "{}{}".format(self.quality, utils.constrain_by_cycle(self.degree, 1, 7))
 
     @property
     def singleSize(self):
@@ -229,7 +236,7 @@ class AbstractInterval:
 
     @property
     def size(self):
-        return INTERVALS[self.singleName] + self.degree // 7 * 12
+        return INTERVALS[self.singleName] + self.octave * 12
 
 
 class Interval(AbstractInterval):
